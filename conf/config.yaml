@@ -1,0 +1,15 @@
+defaults:
+  - override hydra/job_logging: custom
+  - _self_
+  
+seed: 0
+wandb_name: debug
+wandb_mode: online
+game_name: MountainCar-v0
+llm_type: gpt-3.5-turbo
+eval_max_steps: 50
+cost_budget: 1
+lr: 0.1
+train_iterations: 100
+max_tokens: 500
+max_prompt_size: 3800 # 4097 - 200 - buffer

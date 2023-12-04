@@ -1,0 +1,6 @@
+- +exp=qlearn
+- +wandb_gen_id=3C2FAEBF-3C0A-442C-8B33-B87A4573C3AE
+- wandb_name=qlearn
+- cost_budget=1
+- train_iterations=10000
+- llm_type=gpt-3.5-turbo
