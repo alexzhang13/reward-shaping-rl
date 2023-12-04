@@ -86,7 +86,10 @@ def main(cfg: DictConfig) -> None:
         episode_length = 0
         sum_rewards = 0
         shaped_reward = 0
-        shaped_reward_func = r
+        shaped_reward_func = sr.generate_default_func()
+        complete_goal = 0
+        traj = []
+
         while not done and episode_length < 600:  # goal reached means reward = 0
             if np.random.random() > epsilon:
                 # in this environment, 0 means push the car left, 1 means to do nothing, 2 means to push it right
@@ -95,9 +98,12 @@ def main(cfg: DictConfig) -> None:
                 action = np.random.randint(0, env.action_space.n)
 
             # Run one timestep of the environment's dynamics;  returns a tuple (observation, reward, done, info).
+            
             new_state, reward, done, info, _ = env.step(action)
-
             new_discrete_state = get_discrete_state(new_state)
+
+            traj.append((discrete_state, action, reward))
+            shaped_reward = shaped_reward_func(new_discrete_state[0], new_discrete_state[1], action)
 
             if render:
                 env.render()
@@ -119,10 +125,14 @@ def main(cfg: DictConfig) -> None:
             elif new_state[0] >= env.goal_position:
                 print(("Goal reached at {} episode".format(ep)))
                 q_table[discrete_state + (action,)] = 1
+                complete_goal = 1
 
             discrete_state = new_discrete_state
             episode_length += 1
             sum_rewards += reward
+
+        if complete_goal == 0 and ep < 5:
+            shaped_reward_func = sr.generate_reward_func(traj)  
 
         rewards.append(sum_rewards)
         lengths.append(episode_length)
@@ -130,6 +140,7 @@ def main(cfg: DictConfig) -> None:
             epsilon -= epsilon_decay_value
 
         wandb.log({"train": {"rewards": sum_rewards, "episode_length": episode_length}})
+        print(sr.dump())
 
     env.close()
 

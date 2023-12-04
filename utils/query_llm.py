@@ -35,7 +35,7 @@ def query_gpt(prompt: str):
     total_cost = input_cost + output_cost
 
     # print("Total cost:", total_cost)
-    # print("LLM RESPONSE\n", response["choices"][0]["message"]["content"])
+    print("LLM RESPONSE\n", response["choices"][0]["message"]["content"])
     return total_cost, response["choices"][0]["message"]["content"]
 
 
