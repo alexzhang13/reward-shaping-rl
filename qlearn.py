@@ -16,13 +16,16 @@ from utils.reward import ShapedReward
 # A logger for this file
 log = logging.getLogger(__name__)
 
+
 @hydra.main(version_base=None, config_path="./conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     # Log the config to terminal
     print(OmegaConf.to_yaml(cfg))
 
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.WARN)
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.WARN,
+    )
 
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     print(f"Logging to file {os.path.join(hydra_cfg['run']['dir'], 'eval.log')}")
@@ -37,27 +40,35 @@ def main(cfg: DictConfig) -> None:
     env = gym.make("MountainCar-v0")
     done = False
     env.reset()
-    DISCRETE_OBSERVATION_SPACE_SIZE = [20] * len(env.observation_space.high)  # will give out 20*20 list
+    DISCRETE_OBSERVATION_SPACE_SIZE = [20] * len(
+        env.observation_space.high
+    )  # will give out 20*20 list
 
     # see how big is the range for each of the 20 different buckets
-    discrete_os_win_size = (env.observation_space.high - env.observation_space.low) / DISCRETE_OBSERVATION_SPACE_SIZE
+    discrete_os_win_size = (
+        env.observation_space.high - env.observation_space.low
+    ) / DISCRETE_OBSERVATION_SPACE_SIZE
 
     LEARNING_RATE = cfg.lr
     DISCOUNT = 0.95  # how important we find the new future actions are ; future reward over current reward
     EPISODES = cfg.train_iterations
     render = False
 
-    epsilon = 0.5  # 0-1 ; higher it is, more likely for it to perform something random action
+    epsilon = (
+        0.5  # 0-1 ; higher it is, more likely for it to perform something random action
+    )
     START_EPSILON_DECAYING = 1
     END_EPSILON_DECAYING = EPISODES // 2
     epsilon_decay_value = epsilon / (END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
-    q_table = np.random.uniform(low=-2, high=0, size=(DISCRETE_OBSERVATION_SPACE_SIZE + [env.action_space.n]))
+    q_table = np.random.uniform(
+        low=-2, high=0, size=(DISCRETE_OBSERVATION_SPACE_SIZE + [env.action_space.n])
+    )
 
     def get_discrete_state(state):
         discrete_state = (state - env.observation_space.low) / discrete_os_win_size
         return tuple(discrete_state.astype(np.int32))  # return as tuple
-    
+
     rewards = []
     lengths = []
     sr = ShapedReward()
@@ -96,17 +107,18 @@ def main(cfg: DictConfig) -> None:
                 max_future_q = np.max(q_table[new_discrete_state])
 
                 # q value for the current action and state
-                current_q = q_table[discrete_state + (action, )]
+                current_q = q_table[discrete_state + (action,)]
 
-                new_q = (1 - LEARNING_RATE) * current_q + \
-                    LEARNING_RATE * (reward + shaped_reward + DISCOUNT * max_future_q)
+                new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (
+                    reward + shaped_reward + DISCOUNT * max_future_q
+                )
 
                 # based on the new q, we update the current Q value
-                q_table[discrete_state + (action, )] = new_q
+                q_table[discrete_state + (action,)] = new_q
 
             elif new_state[0] >= env.goal_position:
                 print(("Goal reached at {} episode".format(ep)))
-                q_table[discrete_state + (action, )] = 1
+                q_table[discrete_state + (action,)] = 1
 
             discrete_state = new_discrete_state
             episode_length += 1
@@ -116,10 +128,11 @@ def main(cfg: DictConfig) -> None:
         lengths.append(episode_length)
         if END_EPSILON_DECAYING >= ep >= START_EPSILON_DECAYING:
             epsilon -= epsilon_decay_value
-    
+
         wandb.log({"train": {"rewards": sum_rewards, "episode_length": episode_length}})
-        
+
     env.close()
+
 
 if __name__ == "__main__":
     main()

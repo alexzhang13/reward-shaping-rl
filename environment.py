@@ -1,7 +1,8 @@
 import utils.query_llm as query_llm
 
 # def reward(a: int):
-    # pass
+# pass
+
 
 def main():
     code = """def reward(a: float, b: float, c: float, d: float):
@@ -14,6 +15,7 @@ def main():
     except:
         print("Error!")
     reward(2, 2, 2, 2)
+
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 import os
 import gym
 
+
 def main():
     env = gym.make("MountainCar-v0")
     env.reset()
@@ -15,6 +16,7 @@ def main():
         print("[OBS]: ", obs)
         print("[REWARD]: ", reward)
     env.close()
+
 
 if __name__ == "__main__":
     main()

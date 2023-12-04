@@ -4,6 +4,7 @@ import random
 import wandb
 import numpy as np
 
+
 def setup_wandb(cfg: Dict[str, Any]) -> None:
     """Initialize the wandb process.
 
@@ -28,4 +29,3 @@ def set_seeds(seed: int) -> None:
     """
     random.seed(seed)
     np.random.seed(seed)
-
