@@ -2,9 +2,19 @@
 This repository is designed to be a minimalist framework for using LLMs on a generic RL (gym) environment. In this example, we use classic gym environments like MountainCarv0 and Pokemon Showdown (poke-env).
 
 ## Setup
-To set up poke_env for Pokemon Showdown
-``` git submodule init ```
-``` pip install -r requirements.txt ```
+Set up the Pokemon Showdown server first:
+```
+git clone https://github.com/smogon/pokemon-showdown.git
+cd pokemon-showdown
+npm install
+cp config/config-example.js config/config.js
+node pokemon-showdown start --no-security
+```
+To set up [poke_env](https://github.com/hsahovic/poke-env) and the related libraries:
+``` 
+conda create -n "reward_shaping" python=3.8
+pip install -e .
+```
 
 
 ## The General Method
