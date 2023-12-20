@@ -1,0 +1,16 @@
+[project]
+name = "reward-shaping-rl"
+version = "0.1.0"
+description = 'Official Implementation of "Simple Reward Shaping with LLMs for RL"'
+readme = "README.md"
+requires-python = ">= 3.8"
+authors = [{ name = "Alex Zhang", email = "alzhang@princeton.edu" }]
+keywords = ["llm", "reinforcement learning"]
+dynamic=["dependencies"]
+
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
