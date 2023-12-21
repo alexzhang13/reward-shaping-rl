@@ -17,6 +17,11 @@ from pokeagent.utils.reward import ShapedReward
 log = logging.getLogger(__name__)
 
 
+
+"""
+Simple example of LLM-Reward Shaping for Q-Learning on Mountain Car
+"""
+
 @hydra.main(version_base=None, config_path="./conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     # Log the config to terminal

@@ -1,55 +1,25 @@
-Tapu Koko @ Electrium Z
-Ability: Electric Surge
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-- Thunderbolt
-- U-turn
-- Hidden Power [Ice]
-- Taunt
-
-Landorus-Therian @ Leftovers
-Ability: Intimidate
-EVs: 120 HP / 252 Def / 136 Spe
-Impish Nature
-- Earthquake
-- U-turn
-- Stealth Rock
-- Hidden Power [Ice]
-
-Toxapex @ Shed Shell
-Ability: Regenerator
-EVs: 252 HP / 60 Def / 196 SpD
-Bold Nature
-IVs: 0 Atk
-- Scald
-- Toxic Spikes
-- Recover
-- Toxic
-
-Serperior @ Leftovers
-Ability: Contrary
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Leaf Storm
-- Leech Seed
-- Substitute
-- Hidden Power [Fire]
-
-Celesteela @ Leftovers
-Ability: Beast Boost
-EVs: 252 HP / 28 Def / 228 SpD
-Sassy Nature
-- Heavy Slam
-- Protect
-- Earthquake
-- Leech Seed
-
-Medicham-Mega @ Medichamite
-Ability: Pure Power
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Fake Out
-- High Jump Kick
-- Zen Headbutt
-- Ice Punch
+Dragon Pulse
+Flamethrower
+Sludge Wave
+Thunderbolt
+Hyper Voice
+Mystical Fire
+Protect
+Wish
+Pyro Ball
+Sucker Punch
+U turn
+High Jump Kick
+Overdrive
+Boomburst
+Shift Gear
+Fire Punch
+Stealth Rock
+Scald
+Earthquake
+Toxic
+Defog
+Brave Bird
+Roost
+U turn
+struggle

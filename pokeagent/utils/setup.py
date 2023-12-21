@@ -3,6 +3,7 @@ import random
 
 import wandb
 import numpy as np
+import torch
 
 
 def setup_wandb(cfg: Dict[str, Any]) -> None:
@@ -27,5 +28,9 @@ def set_seeds(seed: int) -> None:
     Args:
         seed (int): integer seed.
     """
+    # Set seeds
     random.seed(seed)
     np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
