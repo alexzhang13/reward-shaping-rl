@@ -9,5 +9,6 @@ python3 -u pokeagent/main.py \
       cost_budget=1 \
       train_iterations=1 \
       max_episodes=10000 \
-      llm_type=gpt-3.5-turbo
+      llm_type=gpt-3.5-turbo \
+      model=PPO
 

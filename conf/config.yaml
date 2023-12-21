@@ -13,3 +13,6 @@ lr: 0.1
 train_iterations: 500
 max_tokens: 500
 max_prompt_size: 3800 # 4097 - 200 - buffer
+reward_shaping: True
+model: DQN
+reward_shaping_type: m3

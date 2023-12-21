@@ -13,10 +13,17 @@ from poke_env.player import (
 )
 
 from pokeagent.agents.pokegym import PokeGen8Gym
-from pokeagent.models.dqn import DQNAgent
+from pokeagent.models.dqn import PPO1
 from pokeagent.utils.reward import ShapedReward
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common import make_vec_env
+from stable_baselines import PPO1
 
-def train_m1(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
+"""
+Adapted for stable baselines PPO. I really need to clean this up later...
+"""
+
+def train_m1(env: PokeGen8Gym, agent: PPO1, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
     """
     Training method 1: Sequential learning of reward function. Code is a bit jank but it gets the job done for now.
     """
@@ -70,19 +77,12 @@ def train_m1(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=No
         agent.save_all()
         won, total_games = evaluate(agent, 20)
         shaped_reward_func = sr.generate_reward_func(won / total_games)
-        agent = DQNAgent(embedding_size=env.input_size, 
-                num_actions=env.action_space.n,
-                device=device,
-                evaluate=False,
-                lr=0.001,
-                save_dir=save_dir,
-                warmup=100,
-                name="iterate_{meta_step}")
+        agent = PPO1(MlpPolicy, env, verbose=1)
         sr.save()
     env.close()
     sr.save()
 
-def train_m2(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
+def train_m2(env: PokeGen8Gym, agent: PPO1, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
     """
     Training method 2: Tree-based. Takes a while because I'm not using threading or async training...
     """
@@ -139,7 +139,7 @@ def train_m2(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=No
             agent.save_all()
             won, total_games = evaluate(agent, 20)
             shaped_reward_func = sr.generate_reward_func(won / total_games)
-            agent = DQNAgent(embedding_size=env.input_size, 
+            agent = PPO1(embedding_size=env.input_size, 
                     num_actions=env.action_space.n,
                     device=device,
                     evaluate=False,
@@ -152,7 +152,7 @@ def train_m2(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=No
     env.close()
     sr.save()
 
-def train_m3(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
+def train_m3(env: PokeGen8Gym, agent: PPO1, episodes:int, sr:ShapedReward=None, device=None, save_dir=None):
     """
     Training method 3 
     """
@@ -209,7 +209,7 @@ def train_m3(env: PokeGen8Gym, agent: DQNAgent, episodes:int, sr:ShapedReward=No
     agent.save_all()
     sr.save()
 
-def evaluate(agent: DQNAgent, episodes:int):
+def evaluate(agent: PPO1, episodes:int):
     eval_env = PokeGen8Gym(set_team=True, opponent="random") # change later
 
     for ep in range(episodes):
@@ -232,63 +232,7 @@ def evaluate(agent: DQNAgent, episodes:int):
                 break
                 
     logging.info(
-        f"DQN Evaluation: {eval_env.n_won_battles} victories out of {eval_env.n_finished_battles} episodes"
+        f"PPO Evaluation: {eval_env.n_won_battles} victories out of {eval_env.n_finished_battles} episodes"
     )
     eval_env.close()
     return eval_env.n_won_battles, eval_env.n_finished_battles
-
-def evalw(agent: DQNAgent, eval_env, episodes:int):
-
-    for ep in range(episodes):
-        state, info = eval_env.reset()
-        s, battle = state
-        while True:
-            
-            # agent step and learn
-            action = agent.action(s) # [agent.action(state)]
-            new_state, reward, terminated, truncated, info = eval_env.step(action)
-            new_s, new_battle = new_state[0], new_state[1]
-            done = terminated or truncated
-            
-            # state = new_state
-            s = new_s
-            
-            if done:
-                print('done!', done, reward)
-                break
-                
-    logging.info(
-        f"DQN Evaluation: {eval_env.n_won_battles} victories out of {eval_env.n_finished_battles} episodes"
-    )
-    return eval_env.n_won_battles, eval_env.n_finished_battles
-
-async def main():
-    # First test the environment to ensure the class is consistent
-    # with the OpenAI API
-    test_env = PokeGen8Gym(set_team=True, opponent="random")
-    # check_env(test_env)
-    test_env.close()
-
-    # Create one environment for training and one for evaluation
-    # opponent = RandomPlayer(battle_format="gen8randombattle")
-    train_env = PokeGen8Gym(set_team=True, opponent="random")
-    # opponent = RandomPlayer(battle_format="gen8randombattle")
-    # eval_env = SimpleRLPlayer(
-        # battle_format="gen8randombattle", opponent=opponent, start_challenging=True
-    # )
-
-    # Compute dimensions
-    n_action = train_env.action_space.n
-    input_shape = (1,) + train_env.observation_space.shape
-    
-    n_steps = 10
-    done = False
-    while not done:
-        # Random action
-        action = train_env.action_space.sample()
-        (obs, battle), reward, done, info, what = train_env.step(action)
-        print(battle, obs, reward, done)
-
-
-if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())

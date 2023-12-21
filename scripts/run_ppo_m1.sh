@@ -7,7 +7,7 @@ python3 -u pokeagent/main.py \
       +wandb_gen_id=$wandb_gen_id \
       hydra.run.dir=outputs/${wandb_name}_${now} \
       cost_budget=1 \
-      train_iterations=1 \
-      max_episodes=10000 \
+      train_iterations=20 \
+      max_episodes=500 \
       llm_type=gpt-3.5-turbo
 

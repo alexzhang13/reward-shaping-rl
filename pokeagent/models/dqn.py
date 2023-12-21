@@ -65,6 +65,7 @@ class DQNAgent(Agent):
         sync_model_iter=10000,
         update_freq=5,
         warmup=10000,
+        name='dqn',
         save_dir="../output/",
     ):
         self._embedding_size = embedding_size
@@ -86,6 +87,7 @@ class DQNAgent(Agent):
         self._update_freq = update_freq
         self._device = device
         self._evaluate = evaluate
+        self._name = name
 
         self._target_network = self._target_network.to(device)
         self._policy_network = self._policy_network.to(device)
@@ -184,7 +186,7 @@ class DQNAgent(Agent):
     def save(self):
         save_path = (
             self._save_dir
-            / f"dqn_net_{int(self._curr_step // self._save_model_iter)}.chkpt"
+            / f"{self._name}_dqn_net_{int(self._curr_step // self._save_model_iter)}.chkpt"
         )
         torch.save(
             dict(
@@ -193,6 +195,19 @@ class DQNAgent(Agent):
             save_path,
         )
         print(f"DQN saved to {save_path} at step {self._curr_step}")
+    
+    def save_all(self):
+        save_path = (
+            self._save_dir
+            / f"{self._name}_dqn_net_final.chkpt"
+        )
+        torch.save(
+            dict(
+                model=self._policy_network.state_dict(), exploration_rate=self._epsilon
+            ),
+            save_path,
+        )
+        print(f"DQN saved to {save_path} after training finished")
 
     def load(self, path, device):
         self._policy_network.load_state_dict(

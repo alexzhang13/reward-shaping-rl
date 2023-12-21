@@ -21,6 +21,7 @@ from utils.setup import (
     setup_wandb,
     set_seeds,
 )
+from pokeagent.utils.reward import ShapedReward
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -31,6 +32,8 @@ from pokeagent.environments import pokeenv
 from pokeagent.models.dqn import (
     DQNAgent
 )
+from stable_baselines import PPO1
+from stable_baselines.common.policies import MlpPolicy
 
 def train(cfg, env, device, mp=None):
     # set up logging and saving
@@ -38,16 +41,33 @@ def train(cfg, env, device, mp=None):
     save_dir.mkdir(parents=True)
     
     # TODO: Change model config selection to be more general
-    model = DQNAgent(embedding_size=env.input_size, 
-                num_actions=env.action_space.n,
-                device=device,
-                evaluate=False,
-                lr=0.001,
-                save_dir=save_dir,
-                warmup=100)
-    pokeenv.train(env=env, 
-                agent=model, 
-                episodes=cfg.max_episodes)
+    if cfg.model == 'PPO':
+        model = PPO1(MlpPolicy, env, verbose=1) # be careful with environment!
+    else:
+        model = DQNAgent(embedding_size=env.input_size, 
+                    num_actions=env.action_space.n,
+                    device=device,
+                    evaluate=False,
+                    lr=0.001,
+                    save_dir=save_dir,
+                    warmup=100)
+    if cfg.reward_shaping:
+        sr = ShapedReward(save_dir=save_dir)
+
+    if cfg.reward_shaping_type == 'm2':
+        pokeenv.train_m2(env=env, 
+                    agent=model, 
+                    episodes=cfg.max_episodes,
+                    sr=sr,
+                    device=device,
+                    save_dir=save_dir)
+    if cfg.reward_shaping_type == 'm3':
+        pokeenv.train_m3(env=env, 
+                    agent=model, 
+                    episodes=cfg.max_episodes,
+                    sr=sr,
+                    device=device,
+                    save_dir=save_dir)
     
     # elif config['model']['model_name'] == 'PPO':
     #     model = PPO.PPOAgent(obs_shape=env.num_states,

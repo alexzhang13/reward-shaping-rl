@@ -79,7 +79,7 @@ class PokeGen8Gym(SimpleRLPlayer):
             self.opponent = RandomPlayer(battle_format="gen8ubers", team=self.team)
 
         my_account_config = AccountConfiguration("DeepQLearningAgent", None)
-        super(SimpleRLPlayer, self).__init__(account_configuration=my_account_config, team=self.team, opponent=self.opponent, battle_format="gen8ubers", start_challenging=True, *args, **kwargs)
+        super(SimpleRLPlayer, self).__init__(team=self.team, opponent=self.opponent, battle_format="gen8ubers", start_challenging=True, *args, **kwargs)
     
     def embed_battle(self, battle: AbstractBattle):
         """

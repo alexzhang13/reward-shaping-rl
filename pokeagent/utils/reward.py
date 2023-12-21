@@ -1,33 +1,77 @@
 import utils.query_llm as query_llm
 from typing import List
+import os
+import logging
 
 class ShapedReward(object):
     """
     Class for generating shaped reward function.
     """
 
-    def __init__(self):
-        self.GOAL_PROMPT = """[GOAL] The goal of MountainCar-v0 is to reach the right-most hill by accelerating the car using the provided actions. Assume that the reward for completing the game is 1."""
-        self.PARAM_PROMPT = """[PARAMS] x_position is from -INF to INF. velocity is from -INF to INF. action is always either 0 for accelerate left, 1 for don't accelerate, 2 for accelerate right."""
-        self.EXAMPLE_TRAJECTORY = """(-100, 1, 0), (-100, 2, 0,) (-50, 2, 0), (0, 2, 0, ), (50, 2, 1), (100, 2, 1) """
-        self.PROMPT = """When I ask you a question, only respond with the code which is the answer. No padding words before or after. Code a function in Python called "reward()" for MountainCar-v0 from OpenAI gym classic, where the arguments are x_position, velocity, action.  Do not provide any code other than the function definition for "reward()". The reward function will be dependent on all the arguments in a non-trivial way.
+    def __init__(self, save_dir:str):
+        self.GOAL_PROMPT = """
+        You are an agent playing Pokemon Showdown, the popular online battle simulator that allows you to build your own team of Pokemon and battle against other players in real-time.
+        [GOAL] Your goal is to defeat your opponent's Pokemon by making them faint using your six Pokemon. You are using the following team: 
+        {team}
+        """
+        self.PARAM_PROMPT = """
+        [PARAMS] Both inputs to your reward function are an AbstractBattle, which has the following format:
+        You can access your opponenent's team with next_battle.opponent_team, which is a list of Pokemon objects.
+        You can access your current team with next_battle.team, which is a list of Pokemon. You can loop over your Pokemon's stats in the following way. Use these stats however you want.
+        for mon in battle.team.values():
+            active = float(mon.active)
+            fainted = float(mon.fainted)
+            health = mon.current_hp
+            type_1=battle.opponent_active_pokemon.type_1,
+            type_2=battle.opponent_active_pokemon.type_2,
+        for move in next_battle.available_moves
+            move.base_power # powerful moves may be better!
 
-{goal}
 
-{param}
+        For example, to reward defeating a Pokemon, you could write:
+        def reward(prev_battle_state, next_battle_state):
+            prev_num_fainted = len([mon for mon in prev_battle_state.opponent_team.values() if mon.fainted])
+            next_num_fainted = len([mon for mon in next_battle_state.opponent_team.values() if mon.fainted])
+            return next_num_fainted - prev_num_fainted
 
-Below is a history of the trajectory in the form (state1, action1, reward1), (state2, action2, reward2.),.. that your reinforcement learning agent took last episode. Modify its reward function to encourage the agent to reach its goal faster. 
+        As another example, to reward attacking your opponent, you could write:
+        def reward(prev_battle_state, next_battle_state):
+            prev_health = len([mon.current_hp for mon in prev_battle_state.opponent_team.values()])
+            curr_health = len([mon.current_hp for mon in next_battle_state.opponent_team.values()])
+            return curr_health - prev_health / 1000.0 # normalizing factor
+        """
+        self.TRAJECTORY = """Your previous reward function was {code}. It gave you a reward of {reward}. Improve upon this by creating another unique function!
+        !"""
+        self.PROMPT = """When I ask you a question, only respond with the code which is the answer. 
+        No padding words before or after. Code a function in Python called "reward()" for the Pokemon Showdown API, 
+        where the arguments are the previous state prev_battle_state and the next state next_battle_state. You are designing the reward for the transition
+        that was just taken. Do not provide any code other than the function definition for "def reward(prev_battle_state, next_battle_state):". Make sure it returns a reward.
+        The reward function will be dependent on all the arguments in a non-trivial way. Use as much knowledge about Pokemon Showdown that you have
+        to design this function.
 
-{trajectory}
+        {goal}
+
+        {trajectory}
+
+        {param}
+
         """
 
         self.log_of_responses = []
+        self.valid_code_history = ['none']
+        self.team = self.extract_team()
+        self.save_dir = save_dir
 
-    def build_prompt(self, trajectory : List, failed : bool):
+    def extract_team(self):
+        with open('data/team1.txt') as f:
+            team = f.read()
+        return team
+    
+    def build_prompt(self, reward: float, failed : bool):
         prompt = self.PROMPT.format(
-            goal=self.GOAL_PROMPT,
+            goal=self.GOAL_PROMPT.format(team=self.team),
             param=self.PARAM_PROMPT,
-            trajectory=str(trajectory),
+            trajectory=self.TRAJECTORY.format(code=self.valid_code_history[-1], reward=reward),
         )
 
         if failed:
@@ -39,27 +83,40 @@ Below is a history of the trajectory in the form (state1, action1, reward1), (st
         """
         Default reward function.
         """
-        code = "def reward(x_position, velocity, action):\n\treturn 0 "
+        code = """
+def reward(prev_battle_state, next_battle_state):
+    prev_fainted = [mon for mon in prev_battle_state.opponent_team.values() if mon.fainted]
+    next_fainted = [mon for mon in next_battle_state.opponent_team.values() if mon.fainted]
+    
+    prev_total_hp = sum([mon.current_hp for mon in prev_battle_state.opponent_team.values()])
+    next_total_hp = sum([mon.current_hp for mon in next_battle_state.opponent_team.values()])
+    
+    reward_defeat = len(next_fainted) - len(prev_fainted)
+    reward_damage = (prev_total_hp - next_total_hp) / 1000.0
+    
+    return reward_defeat + reward_damage
+        """
         exec(code, globals())
         return reward
 
-    def generate_reward_func(self, trajectory : List):
+    def generate_reward_func(self, reward:float):
         """
-        Current format hard-coded for MountainCar.
+        Current format hard-coded for MountainCar or Showdown to work and produce less errors.
         """
         # while True:
         failed = False
-        trajectory = trajectory[-50:]
+        # trajectory = trajectory[-50:]
         code = None
         for i in range(2):
             try:
-                prompt = self.build_prompt(trajectory, failed=failed)
+                prompt = self.build_prompt(reward, failed=failed)
                 print("[P]:", prompt)
                 cost, code = query_llm.query_gpt(prompt)
                 self.log_of_responses.append({"prompt": prompt, "code": code})
-                print('code', code)
+                logging.info('code', code)
                 exec(code, globals())
             except:
+                self.valid_code_history.append('failed: ' + code)
                 if failed:
                     print("Error: failed again!")
                     print(code)
@@ -68,16 +125,21 @@ Below is a history of the trajectory in the form (state1, action1, reward1), (st
                 failed = True
                 continue
 
-            try:
-                _ = reward(0, 0, 0)
-            except:
-                print("Reward arguments are wrong!")
-                print(reward.__dict__)
-            return reward
+            # try:
+            #     _ = reward(0, 0, 0)
+            # except:
+            #     print("Reward arguments are wrong!")
+            #     print(reward.__dict__)
+            self.valid_code_history.append(code)
+            return code
         return self.generate_default_func()
 
     def dump(self):
         print(self.log_of_responses)
+
+    def save(self):
+        with open(os.path.join(self.save_dir, 'reward_code.txt'), 'w') as f:
+            f.write(str(self.valid_code_history))
 
 
 if __name__ == "__main__":
